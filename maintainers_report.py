@@ -21,6 +21,7 @@ Requirements:
 
 """
 
+
 # %%
 # Imports
 import calendar
@@ -55,7 +56,7 @@ repos = [
     "pybids",
     "bids-matlab",
 ]
-repos = [user + "/" + repo for repo in repos]
+repos = [f"{user}/" + repo for repo in repos]
 
 # %%
 # Parse information
@@ -99,14 +100,15 @@ for repo_name in tqdm(repos):
                     continue
 
                 added = False
-                if item.closed_at is not None:
-                    if (item.closed_at >= mindate) and (item.closed_at < maxdate):
-                        if item_type == "PRs":
-                            # ignore PRs that were closed but not merged
-                            if not item.is_merged():
-                                continue
-                        data[item_type]["Closed"] += 1
-                        added = True
+                if (
+                    item.closed_at is not None
+                    and (item.closed_at >= mindate)
+                    and (item.closed_at < maxdate)
+                ):
+                    if item_type == "PRs" and not item.is_merged():
+                        continue
+                    data[item_type]["Closed"] += 1
+                    added = True
                 if (item.created_at >= mindate) and (item.created_at < maxdate):
                     data[item_type]["Opened"] += 1
                     added = True
@@ -115,7 +117,7 @@ for repo_name in tqdm(repos):
                     log[repo_name][item_type][state] += [item.html_url]
 
     df = pd.DataFrame(data).melt(ignore_index=False).reset_index()
-    df["repo"] = repo_name.replace(user + "/", "")
+    df["repo"] = repo_name.replace(f"{user}/", "")
     df.columns = ["state", "item_type", "value", "repo"]
     dfs.append(df)
 
