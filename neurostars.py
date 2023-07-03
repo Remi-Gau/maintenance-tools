@@ -50,7 +50,7 @@ verbose = True
 debug = False
 
 # Set a month of interest
-month = 12  # integer, e.g., May = 5
+month = 7  # integer, e.g., May = 5
 
 
 def tags(debug=False):
@@ -77,6 +77,7 @@ def tags(debug=False):
             "dtiprep",
             "nipreps",
             "niprep",
+            "nilearn",
             "fitlins",
             "openneuro",
             "openneuro-cli",
@@ -100,6 +101,7 @@ def tags_combine():
         "openneuro": ["openneuro", "openneuro-cli"],
     }
 
+
 def print_note(month, year, nb_topics, nb_posts):
     (mindate, maxdate) = return_min_max_date(month, year)
     print(f"Neurostats stats for the {datetime.now().strftime('%B')} {year}")
@@ -107,8 +109,8 @@ def print_note(month, year, nb_topics, nb_posts):
     print(f"{nb_posts} new posts overall over the last 30 days")
     print(
         f"New topics for given tags counted between {mindate.date()} and {maxdate.date()}"
-    )  
-    print(f"Included queried tags:{tags()}")  
+    )
+    print(f"Included queried tags:{tags()}")
     print(
         """
 Note: 
@@ -161,6 +163,7 @@ def retrun_nb_posts_and_topics_in_last_30_days():
     nb_posts = response.json()["about"]["stats"]["posts_30_days"]
 
     return nb_topics, nb_posts
+
 
 def get_topics_for_tag(tag: str, debug=False, verbose=False) -> pd.DataFrame:
     """Return a dataframe of neurostars topics for a given tag
@@ -272,14 +275,14 @@ def return_nb_new_posts_for_topic(topic: dict) -> int:
 
 def return_nb_posts_since_month(df: pd.DataFrame, month: int, year: int) -> int:
     (mindate, maxdate) = return_min_max_date(month, year)
-    created_at = pd.to_datetime(df["created_at"], infer_datetime_format=True).dt.date
+    created_at = pd.to_datetime(df["created_at"]).dt.date
     is_newly_created = (created_at > mindate.date()) & (created_at < maxdate.date())
     return is_newly_created.sum()
 
 
 def return_topics_for_month(df: pd.DataFrame, month: int, year: int):
     (mindate, maxdate) = return_min_max_date(month, year)
-    created_at = pd.to_datetime(df["created_at"], infer_datetime_format=True).dt.date
+    created_at = pd.to_datetime(df["created_at"]).dt.date
     return (created_at > mindate.date()) & (created_at < maxdate.date())
 
 
@@ -365,7 +368,6 @@ def main():
 
             if tag == "bids":
                 monthly_stats.to_csv("neurostars_monthly_stats.tsv", sep="\t")
-                plot_neurostars("neurostars_monthly_stats.tsv", print_to_file=True)
 
     summary = pd.DataFrame(data=summary)
     summary["mean_nb_post_per_topic"] = summary.apply(
@@ -383,6 +385,12 @@ def main():
     (nb_topics, nb_posts) = retrun_nb_posts_and_topics_in_last_30_days()
 
     shorten_table("neurostars_summary_stats.tsv")
+
+    df = pd.read_csv("neurostars_short_summary_stats.tsv", sep="\t")
+    print(df)
+    columns_to_drop = ["new topics", "new posts"]
+    df = df.drop(columns=columns_to_drop)
+    df.to_markdown("neurostars_short_summary_stats.md", index=False)
 
     print_note(month, year, nb_topics, nb_posts)
     print(summary)
